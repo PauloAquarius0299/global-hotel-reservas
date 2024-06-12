@@ -14,7 +14,7 @@ const Hotel = async ({ params }: HotelPageProps) => {
 
     //if (!userId) return <div>Not Authenticated...</div>;
 
-    //if (hotel && hotel.userId !== userId) return <div>Access Denied...</div>;
+    //if (hotel && hotel.userId !== userId) return <div>Access Denied...</div>
 
     return (
         <div>

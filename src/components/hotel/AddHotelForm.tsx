@@ -8,12 +8,23 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, For
 import { Input } from '../ui/input';
 import {Textarea} from '../ui/textarea';
 import {Checkbox} from '../ui/checkbox';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { UploadButton } from '../uploadthing'
 import { useToast } from '../ui/use-toast'
-import { Image, Loader2, XCircle } from 'lucide-react'
+import {  Loader2, XCircle, PencilLine, Pencil } from 'lucide-react'
 import { Button } from '../ui/button'
-import { axios } from 'axios'
+import axios from 'axios'
+import Image from 'next/image'
+import useLocation from '@/hooks/useLocation'
+import {IState, ICity} from 'country-state-city';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 
 interface AddHotelFormProps{
     hotel: HotelWithRooms | null
@@ -59,12 +70,17 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
 
   const [image, setImage] = useState<string | undefined>(hotel?.image)
   const [imageIsDeleting, setImageIsDeleting] = useState(false)
+  const [states, setStates] = useState<IState[]>([])
+  const [cities, setCities] = useState<ICity[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const {toast} = useToast()
+  const {getAllCountries, getCountryState, getStateCities} = useLocation()
+  const countries = getAllCountries()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: hotel || {
      title: '',
      description: '',
      image: '',
@@ -87,9 +103,35 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
     },
   })
 
+  useEffect(()=>{
+    if(typeof image === 'string')
+      form.setValue('image', image, {
+    shouldValidate: true,
+    shouldDirty: true,
+    shouldTouch: true
+    })
+  }, [image])
+
+  useEffect(()=> {
+    const selectedCountry = form.watch('country')
+    const countryStates = getCountryState(selectedCountry)
+    if(countryStates){
+      setStates(countryStates)
+    }
+  }, [form.watch('country')])
+
+  useEffect(()=> {
+    const selectedCountry = form.watch('country')
+    const selectedState = form.watch('state')
+    const stateCities = getStateCities(selectedCountry, selectedState)
+    if(stateCities){
+      setCities(stateCities)
+    }
+  }, [form.watch('country'), form.watch('state')])
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     
-    console.log(values)
+    setIsLoading(true)
   }
 
   const handleImageDelete = (image: string)=>{
@@ -235,6 +277,7 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
               </FormItem>
             )}
             />
+            <div className='flex-1 flex flex-col gap-6'>
             <FormField 
             control={form.control}
             name="freeParking"
@@ -314,6 +357,7 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
               </FormItem>
             )}
             />
+            </div>
         </div>
         <FormField 
         control={form.control}
@@ -325,7 +369,7 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
             <FormControl>
               {image ? <>
               <div className='relative max-w-[400px] min-w-[200px] max-h-[200px] mt-4 '>
-                <Image fill src={image} alt='hotel image' className='object-contain' />
+                <Image layout="fill" src={image} alt='hotel image' className='object-contain' />
                 <Button onClick={()=> handleImageDelete(image)} type='button' size='icon' variant='ghost' className='absolute right-[-12px] top-0'>
                   {imageIsDeleting ? <Loader2 /> : <XCircle />}
                 </Button>
@@ -356,9 +400,110 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
         )}
         />
           </div>
-          <div className='flex-1 flex flex-col gap-6'>part 2</div>
+          <div className='flex-1 flex flex-col gap-6'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              <FormField 
+              control={form.control}
+              name='country'
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>Selecione o Pais *</FormLabel>
+                  <FormDescription>Em qual pais sua propriedade está localizada?
+                  </FormDescription>
+                  <Select
+                  disabled={isLoading}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                  >
+                 <SelectTrigger className="bg-background">
+                   <SelectValue defaultValue={field.value} placeholder="Selecione o Pais" />
+                 </SelectTrigger>
+                 <SelectContent>
+                  {countries.map((country)=>{
+                      return <SelectItem key={country.isoCode} value={country.isoCode}>{country.name}</SelectItem>
+                  })}
+                </SelectContent>
+                </Select>
+                </FormItem>
+              )}
+              />
+              <FormField 
+              control={form.control}
+              name='state'
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>Selecione o Estado </FormLabel>
+                  <FormDescription>Em qual estado sua propriedade está localizada?
+                  </FormDescription>
+                  <Select
+                  disabled={isLoading || states.length > 1}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                  >
+                 <SelectTrigger className="bg-background">
+                   <SelectValue defaultValue={field.value} placeholder="Selecione o Estado" />
+                 </SelectTrigger>
+                 <SelectContent>
+                  {states.map((state)=>{
+                      return <SelectItem key={state.isoCode} value={state.isoCode}>{state.name}</SelectItem>
+                  })}
+                </SelectContent>
+                </Select>
+                </FormItem>
+              )}
+              />
+              <FormField 
+              control={form.control}
+              name='city'
+              render={({field}) => (
+                <FormItem>
+                  <FormLabel>Selecione a Cidade </FormLabel>
+                  <FormDescription>Em qual cidade sua propriedade está localizada?
+                  </FormDescription>
+                  <Select
+                  disabled={isLoading || cities.length < 1}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  defaultValue={field.value}
+                  >
+                 <SelectTrigger className="bg-background">
+                   <SelectValue defaultValue={field.value} placeholder="Selecione a Cidade" />
+                 </SelectTrigger>
+                 <SelectContent>
+                  {cities.map((city)=>{
+                      return <SelectItem key={city.name} value={city.name}>{city.name}</SelectItem>
+                  })}
+                </SelectContent>
+                </Select>
+                </FormItem>
+              )}
+              />
+            </div>
+            <FormField
+          control={form.control}
+          name="locationDescription"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrição do Local *</FormLabel>
+              <FormDescription>
+                Providencie detalhes da localização do seu hotel
+              </FormDescription>
+              <FormControl>
+                <Textarea placeholder="Localizada na rua proximo a praia azul..." {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className='flex justify-between gap-2 flex-wrap'>
+          {hotel ? <Button className='max-w-[150px]' disabled={isLoading}>{isLoading ? <><Loader2 className='mr-2 h-4 w-4' />Updating</> : <><PencilLine className='mr-2 h-4 w-4' />Update</>}</Button> : <Button className='max-w-[150px]' disabled={isLoading} >
+            {isLoading ? <><Loader2 className='mr-2 h-4 w-4' />Creating</> : <><Pencil className='mr-2 h-4 w-4' />Create Hotel</> }
+            </Button>}
         </div>
-      
+          </div>
+        </div>
       </form>
     </Form>
   )
