@@ -17,6 +17,7 @@ import axios from 'axios'
 import Image from 'next/image'
 import useLocation from '@/hooks/useLocation'
 import {IState, ICity} from 'country-state-city';
+import {useRouter} from 'next/navigation'
 import {
   Select,
   SelectContent,
@@ -75,6 +76,7 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
   const [isLoading, setIsLoading] = useState(false)
 
   const {toast} = useToast()
+  const router = useRouter()
   const {getAllCountries, getCountryState, getStateCities} = useLocation()
   const countries = getAllCountries()
 
@@ -132,6 +134,25 @@ const AddHotelForm = ({hotel}: AddHotelFormProps) => {
   function onSubmit(values: z.infer<typeof formSchema>) {
     
     setIsLoading(true)
+    if(hotel){
+
+    } else {
+      axios.post('/api/hotel', values).then((res)=> {
+        toast({
+          variant: 'success',
+          description: 'Hotel created'
+        })
+        router.push(`hotel/${res.data.id}`)
+        setIsLoading(false)
+      }).catch((err) => {
+        console.log(err)
+        toast({
+          variant: 'destructive',
+          description: 'Something went wrong'
+        })
+        setIsLoading(false)
+      })
+    }
   }
 
   const handleImageDelete = (image: string)=>{

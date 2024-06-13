@@ -7,7 +7,7 @@ export async function POST(req: Request){
         const body = await req.json()
         const {userId} = auth()
 
-        if(userId){
+        if(!userId){
             return new NextResponse('Unauthorized', {status: 401})
         }
         const hotel = await prismadb.hotel.create({
