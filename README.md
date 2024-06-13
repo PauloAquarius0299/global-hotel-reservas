@@ -1,3 +1,12 @@
+#Global Hotel Project
+![Captura de Tela (230)](https://github.com/PauloAquarius0299/global-hotel-reservas/assets/114706743/0aeddb2f-f927-4b96-b1f3-8fa379ce6836)
+## Ferramentas
+* Next
+* TypeScript
+* Nodejs
+* uploadThing
+
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
